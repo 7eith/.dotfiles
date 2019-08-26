@@ -1,0 +1,49 @@
+version: "3.3"
+
+services:
+
+  traefik:
+    image: "traefik:v2.0.0-beta1"
+    container_name: "traefik_reverse_proxy"
+    command:
+      - "--api=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=reverse-proxy"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - reverse-proxy
+
+  portainer:
+    image: portainer/portainer
+    command: -H unix:///var/run/docker.sock
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    networks:
+      - reverse-proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=reverse-proxy"
+      - "traefik.http.routers.portainer.rule=Host(`portainer.lo`)"
+      - "traefik.http.routers.portainer.entrypoints=web"
+
+  whoami:
+    image: "containous/whoami"
+    container_name: "simple-service"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.whoami.rule=Host(`whoami.lo`)"
+      - "traefik.http.routers.whoami.entrypoints=web"
+
+networks:
+  reverse-proxy:
+    external: true
+
+volumes:
+  portainer_data:
