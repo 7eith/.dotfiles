@@ -1,0 +1,18 @@
+version: "3.3"
+
+services:
+
+  spotilo:
+    build: .
+    container_name: "spotilo"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=reverse-proxy"
+      - "traefik.http.routers.spotilo.rule=Host(`node-app.lo`)"
+      - "traefik.http.routers.spotilo.entrypoints=web"
+    networks:
+      - reverse-proxy
+
+networks:
+  reverse-proxy:
+    external: true
