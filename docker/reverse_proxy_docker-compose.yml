@@ -4,7 +4,7 @@ services:
 
   traefik:
     image: "traefik:v2.0.0-beta1"
-    container_name: "traefik_reverse_proxy"
+    container_name: "global_reverse_proxy"
     command:
       - "--api=true"
       - "--providers.docker=true"
@@ -21,6 +21,7 @@ services:
 
   portainer:
     image: portainer/portainer
+    container_name: "global_portainer"
     command: -H unix:///var/run/docker.sock
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -33,17 +34,45 @@ services:
       - "traefik.http.routers.portainer.rule=Host(`portainer.lo`)"
       - "traefik.http.routers.portainer.entrypoints=web"
 
-  whoami:
-    image: "containous/whoami"
-    container_name: "simple-service"
+  mysql:
+    image: "mysql:latest"
+    container_name: "global_mysql"
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_DATABASE: global
+      MYSQL_USER: snkh
+      MYSQL_PASSWORD: notpassword
+      MYSQL_ROOT_PASSWORD: toor
+    volumes:
+      - "mysql_data:/var/lib/mysql"
+    networks:
+      - internal
+
+  phpmyadmin:
+    image: "phpmyadmin/phpmyadmin"
+    container_name: "global_phpmyadmin"
+    links: 
+      - mysql:mysql
+    environment:
+      PMA_HOST: mysql
+      MYSQL_USER: snkh
+      MYSQL_PASSWORD: notpassword
+      MYSQL_ROOT_PASSWORD: toor
+    networks:
+      - reverse-proxy
+      - internal
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.whoami.rule=Host(`whoami.lo`)"
-      - "traefik.http.routers.whoami.entrypoints=web"
+      - "traefik.docker.network=reverse-proxy"
+      - "traefik.http.routers.pma.rule=Host(`pma.lo`)"
+      - "traefik.http.routers.pma.entrypoints=web"
 
 networks:
   reverse-proxy:
     external: true
+  internal:
+    external: false
 
 volumes:
   portainer_data:
+  mysql_data:
