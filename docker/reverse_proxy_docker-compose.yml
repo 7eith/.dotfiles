@@ -11,11 +11,18 @@ services:
       - "--providers.docker.exposedbydefault=false"
       - "--providers.docker.network=reverse-proxy"
       - "--entrypoints.web.address=:80"
+      - "--entryPoints.websecure.address=:443"
+      - "--certificatesresolvers.ssl.acme.tlschallenge=true"
+      - "--certificatesresolvers.ssl.acme.email=iamsnkh@pm.me"
+      - "--certificatesresolvers.ssl.acme.storage=/letsencrypt/acme.json"
+    
     ports:
       - "80:80"
       - "8080:8080"
+      - "443:443"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "/home/snkh/Documents/traefik:/letsencrypt" # need to be run in a Linux partitions (chmod)
     networks:
       - reverse-proxy
 
@@ -37,7 +44,6 @@ services:
   mysql:
     image: "mysql:latest"
     container_name: "global_mysql"
-    command: --default-authentication-plugin=mysql_native_password
     environment:
       MYSQL_DATABASE: global
       MYSQL_USER: snkh
